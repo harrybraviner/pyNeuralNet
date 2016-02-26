@@ -41,7 +41,7 @@ class pyNeuralNet:
 
         inputVector = np.vstack(([1.0], inputVector))  # Augment with the bias unit
 
-        outputVector = self.Theta[inputLayer-1] * inputVector
+        outputVector = np.matrix([sigmoid(z) for z in (self.Theta[inputLayer-1] * inputVector).flat]).T
         return outputVector
 
     def __propForwardWholeNet__(self, inputVector):
