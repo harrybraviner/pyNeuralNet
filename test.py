@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from pyNeuralNet import pyNeuralNet
+from pyNeuralNet import pyNeuralNet, sigmoid, sigmoidGradient
 
 class pyNeuralNetTestMethods(unittest.TestCase):
 
@@ -41,6 +41,24 @@ class pyNeuralNetTestMethods(unittest.TestCase):
             pyNeuralNet(5, [], 3)
         with self.assertRaises(TypeError):
             pyNeuralNet(5, [5], 0)
+
+    def test_sigmoid(self):
+        self.assertEqual(sigmoid(0.0), 0.5)
+        self.assertGreaterEqual(sigmoid(50.0), (1.0 - 1e-20))
+        self.assertLessEqual(sigmoid(-50.0), 1e-20)
+        
+    def test_sigmoidGradient(self):
+        self.assertEqual(sigmoidGradient(0.0), 0.25)
+        self.assertAlmostEqual(sigmoidGradient(50.0), 0.0)
+        self.assertAlmostEqual(sigmoidGradient(-50.0), 0.0)
+
+        epsilon = 1e-7
+        def numGrad(x):
+            return (sigmoid(x+epsilon) - sigmoid(x-epsilon))/(2.0*epsilon)
+
+        self.assertAlmostEqual(sigmoidGradient(1.0), numGrad(1.0))
+        self.assertAlmostEqual(sigmoidGradient(-5.0), numGrad(-5.0))
+
 
 if __name__ == "__main__":
     unittest.main()
