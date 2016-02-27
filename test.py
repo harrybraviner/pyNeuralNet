@@ -6,7 +6,7 @@ from math import exp
 import numpy as np
 
 
-from pyNeuralNet import pyNeuralNet, sigmoid, sigmoidGradient
+from pyNeuralNet import pyNeuralNet, sigmoid, sigmoidGradient, sigmoid_broadcast, sigmoidGradient_broadcast
 
 class pyNeuralNetTestMethods(unittest.TestCase):
 
@@ -89,6 +89,35 @@ class pyNeuralNetTestMethods(unittest.TestCase):
         self.assertLessEqual((a3 - np.matrix([1.0 / (1.0 + exp(-z)) for z in [7, -5, 4, 3, 11, -10, 8]]).T).max(), epsilon)
         self.assertGreaterEqual((a3 - np.matrix([1.0 / (1.0 + exp(-z)) for z in [7, -5, 4, 3, 11, -10, 8]]).T).min(), -epsilon)
 
+    def test_propForwardZToZ__(self):
+        net = pyNeuralNet(5, [6], 7)
+        self.assertEqual(len(net.__propForwardZToZ__(2, [0, 0, 0, 0, 0, 0])), 7)
+        self.assertTrue((net.__propForwardZToZ__(2, [0.9, 0.9, 0.9, 0.9, 0.9, 0.9]) == np.matrix([0, 0, 0, 0, 0, 0, 0]).T).all())
+        with self.assertRaises(TypeError):
+            net.__propForwardZToZ__(1, [0.9, 0.9, 0.9, 0.9, 0.9])
+        with self.assertRaises(TypeError):
+            net.__propForwardZToZ__(3, [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9])
+
+        epsilon = 1e-12
+        net.Theta[0] = np.matrix([[5, 0, 0, 2, 1, 0],
+                                  [0, 1, 0, 0, 0, 1],
+                                  [1, 0, 0, 0, 0, 0],
+                                  [0, 1, 1, 0, 0, 0],
+                                  [0, 0, 0, 0, 1, 0],
+                                  [5, 0, 0, 0, 0, 2]])
+        net.Theta[1] = np.matrix([[2, 0, 1, 1, 0, 0, 1],
+                                  [0, 1, 4, 0, 0, 1, 0],
+                                  [1, 0, 0, 1, 0, 0, 0],
+                                  [0, 0, 0, 1, 0, 0, 0],
+                                  [0, 2, 0, 0, 3, 0 ,4],
+                                  [2, 0, 3, 0, 2, 0, 0],
+                                  [1, 0, 0, 1, 0, 0, 1]])
+        z2 = np.matrix([0.5, -0.1, 0.4, 0.3, -0.7, -0.23]).T
+        a2 = np.vstack([[1], sigmoid_broadcast(z2)])
+        z3 = net.Theta[1] * a2
+        self.assertLessEqual((net.__propForwardZToZ__(2, z2) - z3).max(), epsilon)
+        self.assertGreaterEqual((net.__propForwardZToZ__(2, z2) - z3).min(), -epsilon)
+        
 
 
         

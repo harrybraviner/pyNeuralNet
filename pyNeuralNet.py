@@ -10,6 +10,9 @@ def sigmoidGradient(x):
     sig = sigmoid(x)
     return sig*(1.0 - sig)
 
+sigmoid_broadcast = np.frompyfunc(sigmoid, 1, 1)
+sigmoidGradient_broadcast = np.frompyfunc(sigmoid, 1, 1)
+
 class pyNeuralNet:
     
     def __init__(self, inputSize, hiddenLayerSizes, outputNodes):
@@ -28,7 +31,7 @@ class pyNeuralNet:
 
     def __propForwardOneLayer__(self, inputLayer, inputVector):
         if (type(inputLayer) != int or inputLayer < 1 or inputLayer > (self.numberOfLayers-1)):
-            raise TypeError("inputLayer must be an integer between 1 and {0} (the number of layers minus one) inclusive".format(numberOfLayers-1))
+            raise TypeError("inputLayer must be an integer between 1 and {0} (the number of layers minus one) inclusive".format(self.numberOfLayers-1))
         # Just try creating an np.matrix from it and catch anything that it throws!
         try:
             inputVector = np.matrix(inputVector, dtype=np.float64)
@@ -44,14 +47,34 @@ class pyNeuralNet:
         outputVector = np.matrix([sigmoid(z) for z in (self.Theta[inputLayer-1] * inputVector).flat]).T
         return outputVector
 
+    def __propForwardZToZ__(self, inputLayer, inputZ):
+        # For back-propogation we need to know z, rather than a, at each layer
+        # If inputlayer = l, then this takes z^l and returns z^(l+1)
+        if (type(inputLayer) != int or inputLayer < 2 or inputLayer > (self.numberOfLayers-1)):
+            raise TypeError("inputLayer must be an integer between 2 and {0} (the number of layers minus one) inclusive".format(self.numberOfLayers-1))
+        try:
+            inputZ = np.matrix(inputZ, dtype=np.float64)
+        except Exception as e:
+            raise TypeError("Failed to put inputZ into a numpy matrix of type float64.\nGot message from inner exception {0} of type {1}".format(e.message, str(type(e))))
+        if (inputZ.shape == (1, self.layerSizes[inputLayer-1])):
+            inputZ = inputZ.T
+        if (inputZ.shape != (self.layerSizes[inputLayer-1], 1)):
+            raise TypeError("inputZ must be contain a single column and {0} rows (the number of units in layer {1}), or be the transpose of such a vector.".format(self.layerSizes[inputLayer-1], inputLayer))
+
+        a_l = np.vstack([[1.0], sigmoid_broadcast(inputZ)]) # Augment with a bias unit
+        z_lPlusOne = self.Theta[inputLayer-1] * a_l
+        
+        return z_lPlusOne
+        
+
     def __propForwardWholeNet__(self, inputVector):
         for layerIndex in range(1, self.numberOfLayers):
             inputVector = self.__propForwardOneLayer__(layerIndex, inputVector)
 
     def __propBackOneLayer__(self, inputLayer, inputDelta, inputZ):
         # To compute delat^(l), inputLayer should be (l+1), inputDelta should be delta^(l+1), and inputZ should be z^(l)
-        if(type(inputLayer) != int or inputLayer < 2 or inputLayer > numberOfLayers - 1):
-            raise TypeError("inputLayer must be an integer between 2 and {0} (the number of layers minus 1) inclusive".format(numberOfLayers - 1))
+        if(type(inputLayer) != int or inputLayer < 2 or inputLayer > self.numberOfLayers - 1):
+            raise TypeError("inputLayer must be an integer between 2 and {0} (the number of layers minus 1) inclusive".format(self.numberOfLayers - 1))
         try:
             inputDelta = np.matrix(inputDelta, dtype=np.float64)
         except Exception as e:
