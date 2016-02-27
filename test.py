@@ -62,7 +62,6 @@ class pyNeuralNetTestMethods(unittest.TestCase):
         self.assertAlmostEqual(sigmoidGradient(-5.0), numGrad(-5.0))
 
     def test_propForwardOneLayer(self):
-        # FIXME - finish writing this
         net = pyNeuralNet(5, [6], 7)
         self.assertEqual(len(net.__propForwardOneLayer__(1, [0, 0, 0, 0, 0])), 6)
         self.assertTrue((net.__propForwardOneLayer__(1, [0, 0, 0, 0, 0]) == np.matrix([0.5, 0.5, 0.5, 0.5, 0.5, 0.5]).T).all())
@@ -76,9 +75,21 @@ class pyNeuralNetTestMethods(unittest.TestCase):
                                   [0, 1, 1, 0, 0, 0],
                                   [0, 0, 0, 0, 1, 0],
                                   [5, 0, 0, 0, 0, 2]])
+        net.Theta[1] = np.matrix([[2, 0, 1, 1, 0, 0, 1],
+                                  [0, 1, 4, 0, 0, 1, 0],
+                                  [1, 0, 0, 1, 0, 0, 0],
+                                  [0, 0, 0, 1, 0, 0, 0],
+                                  [0, 2, 0, 0, 3, 0 ,4],
+                                  [2, 0, 3, 0, 2, 0, 0],
+                                  [1, 0, 0, 1, 0, 0, 1]])
         a2 = net.__propForwardOneLayer__(1, np.matrix([4, -2, 6, 3, -1]).T)
         self.assertLessEqual((a2 - np.matrix([1.0 / (1.0 + exp(-z)) for z in [20,3,1,2,3,3]]).T).max(), epsilon)
-        self.assertGreaterEqual((a2 - np.matrix([1.0 / (1.0 + exp(-z)) for z in [20,2,1,2,3,3]]).T).max(), -epsilon)
+        self.assertGreaterEqual((a2 - np.matrix([1.0 / (1.0 + exp(-z)) for z in [20,2,1,2,3,3]]).T).min(), -epsilon)
+        a3 = net.__propForwardOneLayer__(2, np.matrix([2, -2, 3, -3, 1, 4]).T)
+        self.assertLessEqual((a3 - np.matrix([1.0 / (1.0 + exp(-z)) for z in [7, -5, 4, 3, 11, -10, 8]]).T).max(), epsilon)
+        self.assertGreaterEqual((a3 - np.matrix([1.0 / (1.0 + exp(-z)) for z in [7, -5, 4, 3, 11, -10, 8]]).T).min(), -epsilon)
+
+
 
         
 
