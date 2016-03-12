@@ -89,7 +89,7 @@ class pyNeuralNetTestMethods(unittest.TestCase):
         self.assertLessEqual((a3 - np.matrix([1.0 / (1.0 + exp(-z)) for z in [7, -5, 4, 3, 11, -10, 8]]).T).max(), epsilon)
         self.assertGreaterEqual((a3 - np.matrix([1.0 / (1.0 + exp(-z)) for z in [7, -5, 4, 3, 11, -10, 8]]).T).min(), -epsilon)
 
-    def test_propForwardZToZ__(self):
+    def test_propForwardZToZ(self):
         net = pyNeuralNet(5, [6], 7)
         self.assertEqual(len(net.__propForwardZToZ__(2, [0, 0, 0, 0, 0, 0])), 7)
         self.assertTrue((net.__propForwardZToZ__(2, [0.9, 0.9, 0.9, 0.9, 0.9, 0.9]) == np.matrix([0, 0, 0, 0, 0, 0, 0]).T).all())
@@ -118,7 +118,155 @@ class pyNeuralNetTestMethods(unittest.TestCase):
         self.assertLessEqual((net.__propForwardZToZ__(2, z2) - z3).max(), epsilon)
         self.assertGreaterEqual((net.__propForwardZToZ__(2, z2) - z3).min(), -epsilon)
         
+    def test_propForwardAToZ(self):
+        net = pyNeuralNet(5, [6], 7)
+        self.assertEqual(len(net.__propForwardAToZ__(2, [0, 0, 0, 0, 0, 0])), 7)
+        self.assertTrue((net.__propForwardAToZ__(2, [0.9, 0.9, 0.9, 0.9, 0.9, 0.9]) == np.matrix([0, 0, 0, 0, 0, 0, 0]).T).all())
+        with self.assertRaises(TypeError):
+            net.__propForwardAToZ__(1, [0.9, 0.9, 0.9, 0.9, 0.9, 0.9])
+        with self.assertRaises(TypeError):
+            net.__propForwardAToZ__(3, [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9])
+        
+        epsilon = 1e-12
+        net.Theta[0] = np.matrix([[5, 0, 0, 2, 1, 0],
+                                  [0, 1, 0, 0, 0, 1],
+                                  [1, 0, 0, 0, 0, 0],
+                                  [0, 1, 1, 0, 0, 0],
+                                  [0, 0, 0, 0, 1, 0],
+                                  [5, 0, 0, 0, 0, 2]])
+        net.Theta[1] = np.matrix([[2, 0, 1, 1, 0, 0, 1],
+                                  [0, 1, 4, 0, 0, 1, 0],
+                                  [1, 0, 0, 1, 0, 0, 0],
+                                  [0, 0, 0, 1, 0, 0, 0],
+                                  [0, 2, 0, 0, 3, 0 ,4],
+                                  [2, 0, 3, 0, 2, 0, 0],
+                                  [1, 0, 0, 1, 0, 0, 1]])
+        z2 = np.matrix([0.5, -0.1, 0.4, 0.3, -0.7, -0.23]).T
+        a2 = sigmoid_broadcast(z2)
+        z3 = net.Theta[1] * np.vstack([[1.0], a2])
+        self.assertLessEqual((net.__propForwardAToZ__(2, a2) - z3).max(), epsilon)
+        self.assertGreaterEqual((net.__propForwardAToZ__(2, a2) - z3).min(), -epsilon)
 
+    def test_propForwardZToA(self):
+        net = pyNeuralNet(5, [6], 7)
+        self.assertEqual(len(net.__propForwardZToA__(2, [0, 0, 0, 0, 0, 0])), 6)
+        self.assertTrue((net.__propForwardZToA__(2, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]) == np.matrix([0.5, 0.5, 0.5, 0.5, 0.5, 0.5]).T).all())
+        with self.assertRaises(TypeError):
+            net.__propForwardZToA__(1, [0.9, 0.9, 0.9, 0.9, 0.9, 0.9])  # z1 doesn't exist
+        with self.assertRaises(TypeError):
+            net.__propForwardZToA__(2, [0.9, 0.9, 0.9, 0.9, 0.9])  # z2 should have 6 elements
+        with self.assertRaises(TypeError):
+            net.__propForwardZToA__(4, [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9]) # z4 doesn't exist
+        
+        epsilon = 1e-12
+        net.Theta[0] = np.matrix([[5, 0, 0, 2, 1, 0],
+                                  [0, 1, 0, 0, 0, 1],
+                                  [1, 0, 0, 0, 0, 0],
+                                  [0, 1, 1, 0, 0, 0],
+                                  [0, 0, 0, 0, 1, 0],
+                                  [5, 0, 0, 0, 0, 2]])
+        net.Theta[1] = np.matrix([[2, 0, 1, 1, 0, 0, 1],
+                                  [0, 1, 4, 0, 0, 1, 0],
+                                  [1, 0, 0, 1, 0, 0, 0],
+                                  [0, 0, 0, 1, 0, 0, 0],
+                                  [0, 2, 0, 0, 3, 0 ,4],
+                                  [2, 0, 3, 0, 2, 0, 0],
+                                  [1, 0, 0, 1, 0, 0, 1]])
+        z2 = np.matrix([0.5, -0.1, 0.4, 0.3, -0.7, -0.23]).T
+        a2 = sigmoid_broadcast(z2)
+        self.assertLessEqual((net.__propForwardZToA__(2, z2) - a2).max(), epsilon)
+        self.assertGreaterEqual((net.__propForwardZToA__(2, z2) - a2).min(), -epsilon)
+
+    def test_cost(self):
+        net = pyNeuralNet(5, [6], 7)
+        Theta1       = np.matrix([[5, 0, 0, 2, 1, 0],
+                                  [0, 1, 0, 0, 0, 1],
+                                  [1, 0, 0, 0, 0, 0],
+                                  [0, 1, 1, 0, 0, 0],
+                                  [0, 0, 0, 0, 1, 0],
+                                  [5, 0, 0, 0, 0, 2]])
+        Theta2       = np.matrix([[2, 0, 1, 1, 0, 0, 1],
+                                  [0, 1, 4, 0, 0, 1, 0],
+                                  [1, 0, 0, 1, 0, 0, 0],
+                                  [0, 0, 0, 1, 0, 0, 0],
+                                  [0, 2, 0, 0, 3, 0 ,4],
+                                  [2, 0, 3, 0, 2, 0, 0],
+                                  [1, 0, 0, 1, 0, 0, 1]])
+        net.Theta[0] = Theta1
+        net.Theta[1] = Theta2
+
+        trainingPredictor = np.matrix([1.0, -3.2, 4.2, 0.4, 1.2])
+        trainingResponse = np.matrix([2])
+
+        cost = net.__cost__(trainingPredictor, trainingResponse);
+        expectedh = np.matrix([[0.99034614503980067], [0.99451198042713096], [0.8495477739862124], [0.67503752737682365], [0.99816120792402985], [0.99261028906872006], [0.93879956476945892]])
+        y = np.matrix([0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0]).T
+        expectedCost = - (y.T * np.log(expectedh)) - (1.0 - y).T * np.log(1.0 - expectedh)
+
+        print "expectedCost: {0}".format(expectedCost)
+        self.assertAlmostEqual(expectedCost, cost)
+        
+    def test_computeGradients(self):
+        net = pyNeuralNet(5, [6], 7)
+        Theta1       = np.matrix([[5, 0, 0, 2, 1, 0],
+                                  [0, 1, 0, 0, 0, 1],
+                                  [1, 0, 0, 0, 0, 0],
+                                  [0, 1, 1, 0, 0, 0],
+                                  [0, 0, 0, 0, 1, 0],
+                                  [5, 0, 0, 0, 0, 2]], dtype='float64')
+        Theta2       = np.matrix([[2, 0, 1, 1, 0, 0, 1],
+                                  [0, 1, 4, 0, 0, 1, 0],
+                                  [1, 0, 0, 1, 0, 0, 0],
+                                  [0, 0, 0, 1, 0, 0, 0],
+                                  [0, 2, 0, 0, 3, 0 ,4],
+                                  [2, 0, 3, 0, 2, 0, 0],
+                                  [1, 0, 0, 1, 0, 0, 1]], dtype='float64')
+        net.Theta[0] = Theta1
+        net.Theta[1] = Theta2
+        #trainingPredictors = np.matrix([[1.0, -3.2, 4.2, 0.4, 1.2],
+        #                               [0.0, 0.4, -1.3, 0.0, 0.0],
+        #                               [-0.4, 1.0, -0.1, 0.0, 1.2],
+        #                               [3.2, 0.4, 0.0, 0.4, -0.4]])
+        #trainingResponses = np.matrix([1, 2, 1, 3]).T
+        trainingPredictors = np.matrix([[1.0, -3.2, 4.2, 0.4, 1.2]])
+        trainingResponses = np.matrix([1]).T
+
+        grad = net.__computeGradients__(trainingPredictors, trainingResponses)
+
+        numGradients = sum([theta.size for theta in net.Theta])
+        # Numerically compute the gradient from the cost function
+        epsilon = 1e-6
+        numericalGrad = np.matrix([0.0 for i in range(numGradients)]).T
+        for i in range(numGradients):
+            net.Theta[0] = Theta1
+            net.Theta[1] = Theta2
+            
+            if (i < net.Theta[0].size):
+                net.Theta[0].flat[i] = net.Theta[0].flat[i] + epsilon
+            else:
+                j = i - net.Theta[0].size
+                net.Theta[1].flat[j] = net.Theta[1].flat[j] + epsilon
+            costPlus = net.__cost__(trainingPredictors, trainingResponses)
+            
+            if (i < net.Theta[0].size):
+                net.Theta[0].flat[i] = net.Theta[0].flat[i] - 2.0*epsilon
+            else:
+                j = i - net.Theta[0].size
+                net.Theta[1].flat[j] = net.Theta[1].flat[j] - 2.0*epsilon
+            costMinus = net.__cost__(trainingPredictors, trainingResponses)
+            
+            numericalGrad[i] = (costPlus - costMinus)/(2.0*epsilon)
+
+        epsilon2 = 1e-4
+        print grad[0,0]
+        print numericalGrad[0,0]
+        print (grad[0,0]/numericalGrad[0,0])
+        print (grad[1,0]/numericalGrad[1,0])
+        print (grad[2,0]/numericalGrad[2,0])
+        self.assertLessEqual((grad - numericalGrad).max(), epsilon2)
+        self.assertGreaterEqual((grad - numericalGrad).min(), -epsilon2)
+                
+            
 
         
 
